@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import atexit
 import os
+import pathlib
 import socket
 import subprocess
 import sys
@@ -48,11 +49,28 @@ def is_idalib_available() -> bool:
     return os.path.isfile(os.path.join(ida_dir, lib_name))
 
 
+def _app_runtime_dir(install_dir: str) -> str:
+    """Normalise an IDA install dir to the directory holding the runtime
+    binaries (mirrors IDA's official ``py-activate-idalib.py``
+    ``get_runtime_dir()``).
+
+    On macOS, ``~/.idapro/ida-config.json`` stores the ``.app`` bundle path,
+    but ``libidalib.dylib`` lives under ``<bundle>.app/Contents/MacOS``.
+    Without this normalisation ``is_idalib_available()`` always returns False
+    on macOS, so the headless idalib tools are never registered. Other
+    platforms and plain directories are returned unchanged.
+    """
+    path = pathlib.Path(install_dir)
+    if sys.platform == "darwin" and path.suffix == ".app":
+        return str(path / "Contents" / "MacOS")
+    return install_dir
+
+
 def _resolve_ida_dir() -> str | None:
     """Resolve IDA dir from IDADIR env or ida-config.json (no filesystem scan)."""
     env_dir = os.environ.get("IDADIR", "").strip()
     if env_dir and os.path.isdir(env_dir):
-        return env_dir
+        return _app_runtime_dir(env_dir)
     # ida-config.json
     if sys.platform == "win32":
         cfg_path = os.path.join(os.environ.get("APPDATA", ""), "Hex-Rays", "IDA Pro", "ida-config.json")
@@ -64,7 +82,7 @@ def _resolve_ida_dir() -> str | None:
             cfg = json.load(f)
         d = cfg.get("Paths", {}).get("ida-install-dir", "").strip()
         if d and os.path.isdir(d):
-            return d
+            return _app_runtime_dir(d)
     except Exception:
         pass
     return None
