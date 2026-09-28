@@ -333,6 +333,39 @@ For anything not auto-detected, `ida-multi-mcp --config` prints the raw configur
 
 ## Usage
 
+### Running the server with uvx
+
+Run straight from a git repository without installing:
+
+```bash
+uvx --from git+https://github.com/shaoxi2010/ida-multi-mcp.git ida-multi-mcp
+```
+
+To enable headless `idalib_open`, add the `idapro` loader — it lives in the
+optional `idalib` extra, which `uvx` does not install by default:
+
+```bash
+uvx --from git+https://github.com/shaoxi2010/ida-multi-mcp.git --with 'idapro>=0.0.7' ida-multi-mcp
+```
+
+`idapro` resolves your IDA Pro installation through `~/.idapro/ida-config.json`
+(create it once with `<IDA.app>/Contents/MacOS/idalib/python/py-activate-idalib.py`).
+
+Example MCP client entry (Cline, Claude Desktop, …):
+
+```json
+"ida-multi-mcp": {
+  "command": "uvx",
+  "args": [
+    "--from",
+    "git+https://github.com/shaoxi2010/ida-multi-mcp.git",
+    "--with",
+    "idapro>=0.0.7",
+    "ida-multi-mcp"
+  ]
+}
+```
+
 ### Opening several binaries (GUI)
 
 Open each binary in its own IDA Pro window. The plugin auto-loads (`PLUGIN_FIX`) and registers a 4-character instance ID — `k7m2`, `px3a`, `9bf1`. That is the whole setup.
